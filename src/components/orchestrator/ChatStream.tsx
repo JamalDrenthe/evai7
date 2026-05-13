@@ -10,6 +10,8 @@ type Props = {
   onStop: () => void;
   placeholder?: string;
   emptyHint?: string;
+  /** Subtext shown under the empty hint. Set to null to hide. */
+  emptySubtext?: string | null;
 };
 
 export function ChatStream({
@@ -20,6 +22,7 @@ export function ChatStream({
   onStop,
   placeholder = "Stel een vraag…",
   emptyHint = "Begin een gesprek met EVAI",
+  emptySubtext = "Probeer: \"Bereken mijn ZZP netto bij €100k omzet\" of \"Wat is Time Gap Cash Flow?\"",
 }: Props) {
   const [input, setInput] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
@@ -44,9 +47,9 @@ export function ChatStream({
               <Bot className="w-7 h-7 text-cyan-400" />
             </div>
             <h3 className="text-base font-bold text-white mb-1">{emptyHint}</h3>
-            <p className="text-xs text-slate-500 max-w-xs">
-              Probeer: "Bereken mijn ZZP netto bij €100k omzet" of "Wat is Time Gap Cash Flow?"
-            </p>
+            {emptySubtext ? (
+              <p className="text-xs text-slate-500 max-w-xs">{emptySubtext}</p>
+            ) : null}
           </div>
         ) : (
           messages.map((msg) => <MessageBubble key={msg.id} msg={msg} />)

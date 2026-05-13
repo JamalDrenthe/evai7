@@ -1,6 +1,6 @@
 import { useState, useEffect, Suspense, useCallback } from "react";
 import { useLocation } from "react-router";
-import { Sparkles, Loader2, FileText, Lightbulb, Send } from "lucide-react";
+import { Sparkles, Loader2, FileText, Lightbulb, Bot } from "lucide-react";
 import { trpc } from "@/providers/trpc";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { ChatStream } from "@/components/orchestrator/ChatStream";
@@ -21,7 +21,6 @@ export function Workspace() {
   const [mode, setMode] = useState<InteractionMode>(initialMode);
   const [activeModuleId, setActiveModuleId] = useState<string | undefined>();
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [brainstormInput, setBrainstormInput] = useState("");
 
   const createSession = trpc.sessions.create.useMutation();
   const setSessionMode = trpc.sessions.setMode.useMutation();
@@ -109,114 +108,105 @@ export function Workspace() {
                 mode={mode}
                 activeModuleId={activeModuleId}
                 onSelect={handleModuleSelect}
+                showAll={isBrainstorm}
               />
             </aside>
           )}
 
-          {/* Center: Chat or active module panel */}
-          <section className="flex-1 flex flex-col min-w-0 bg-slate-950/50">
-            {isDocs ? (
-              <DocumentsPanel />
-            ) : isBrainstorm && !orchestrator.messages.length ? (
-              <div className="flex-1 overflow-y-auto p-8">
-                <div className="max-w-3xl mx-auto">
-                  <div className="text-center mb-8">
-                    <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-indigo-600/20 border border-cyan-500/30 flex items-center justify-center">
-                      <Lightbulb size={26} className="text-cyan-400" />
-                    </div>
-                    <h2 className="text-2xl font-semibold text-white mb-2">Brainstorm</h2>
-                    <p className="text-sm text-slate-400 max-w-md mx-auto">
-                      Begeleide ideatie met je modules. Kies een startprompt of typ je eigen vraag — Eva combineert
-                      tools, context en eerdere sessies om je verder te helpen.
-                    </p>
+          {/* Center: Brainstorm cards (always visible) on /brainstorm, otherwise chat / panel */}
+          {isBrainstorm ? (
+            <section className="w-[420px] shrink-0 border-r border-slate-800 overflow-y-auto bg-slate-950/40">
+              <div className="p-6">
+                <div className="text-center mb-6">
+                  <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-indigo-600/20 border border-cyan-500/30 flex items-center justify-center">
+                    <Lightbulb size={26} className="text-cyan-400" />
                   </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                    {[
-                      {
-                        title: "Genereer 5 productideeën",
-                        body: "Brainstorm vijf nieuwe productideeën voor de Verdienende Vrienden Club, gebaseerd op huidige cashflow.",
-                        accent: "from-cyan-500/15 to-cyan-500/5 border-cyan-500/30",
-                      },
-                      {
-                        title: "Plan een marketingcampagne",
-                        body: "Bedenk een campagne van 4 weken om nieuwe ZZP'ers naar het platform te trekken. Inclusief kanalen + KPI's.",
-                        accent: "from-indigo-500/15 to-indigo-500/5 border-indigo-500/30",
-                      },
-                      {
-                        title: "Mindmap rond een thema",
-                        body: "Maak een mindmap van 3 niveaus diep over \u201cVoice Verificatie als anti-fraude tool\u201d.",
-                        accent: "from-emerald-500/15 to-emerald-500/5 border-emerald-500/30",
-                      },
-                      {
-                        title: "Combineer twee modules",
-                        body: "Hoe kan de ZZP Netto Calculator samenwerken met de Estate Calculator om vermogensgroei te modelleren?",
-                        accent: "from-amber-500/15 to-amber-500/5 border-amber-500/30",
-                      },
-                    ].map((card) => (
-                      <button
-                        key={card.title}
-                        onClick={() => {
-                          if (mode !== "chat-projects") handleModeChange("chat-projects");
-                          orchestrator.send(card.body);
-                        }}
-                        disabled={orchestrator.isStreaming}
-                        className={`text-left p-4 rounded-2xl border bg-gradient-to-br ${card.accent} hover:border-cyan-400/60 transition-colors`}
-                      >
-                        <p className="text-[13px] font-semibold text-white mb-1">{card.title}</p>
-                        <p className="text-[12px] text-slate-300 leading-relaxed">{card.body}</p>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={brainstormInput}
-                      onChange={(e) => setBrainstormInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          const text = brainstormInput.trim();
-                          if (!text || orchestrator.isStreaming) return;
-                          setBrainstormInput("");
-                          if (mode !== "chat-projects") handleModeChange("chat-projects");
-                          orchestrator.send(text);
-                        }
-                      }}
-                      placeholder="Start een brainstorm…"
-                      disabled={orchestrator.isStreaming}
-                      className="flex-1 px-4 py-2.5 bg-slate-900/60 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition disabled:opacity-50"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const text = brainstormInput.trim();
-                        if (!text || orchestrator.isStreaming) return;
-                        setBrainstormInput("");
-                        if (mode !== "chat-projects") handleModeChange("chat-projects");
-                        orchestrator.send(text);
-                      }}
-                      disabled={!brainstormInput.trim() || orchestrator.isStreaming}
-                      className="px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <p className="mt-3 text-[11px] text-slate-500 text-center">
-                    Tip: kies een startprompt hierboven of typ je eigen vraag. Eva schakelt automatisch naar de juiste tools.
+                  <h2 className="text-xl font-semibold text-white mb-2">Brainstorm</h2>
+                  <p className="text-[12px] text-slate-400 leading-relaxed">
+                    Begeleide ideatie met al je modules. Kies een startprompt of typ rechts je eigen vraag — Eva
+                    combineert tools, context en eerdere sessies.
                   </p>
                 </div>
+
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">
+                  Startprompts
+                </p>
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    {
+                      title: "Genereer 5 productideeën",
+                      body: "Brainstorm vijf nieuwe productideeën voor de Verdienende Vrienden Club, gebaseerd op huidige cashflow.",
+                      accent: "from-cyan-500/15 to-cyan-500/5 border-cyan-500/30",
+                    },
+                    {
+                      title: "Plan een marketingcampagne",
+                      body: "Bedenk een campagne van 4 weken om nieuwe ZZP'ers naar het platform te trekken. Inclusief kanalen + KPI's.",
+                      accent: "from-indigo-500/15 to-indigo-500/5 border-indigo-500/30",
+                    },
+                    {
+                      title: "Mindmap rond een thema",
+                      body: "Maak een mindmap van 3 niveaus diep over \u201cVoice Verificatie als anti-fraude tool\u201d.",
+                      accent: "from-emerald-500/15 to-emerald-500/5 border-emerald-500/30",
+                    },
+                    {
+                      title: "Combineer twee modules",
+                      body: "Hoe kan de ZZP Netto Calculator samenwerken met de Estate Calculator om vermogensgroei te modelleren?",
+                      accent: "from-amber-500/15 to-amber-500/5 border-amber-500/30",
+                    },
+                  ].map((card) => (
+                    <button
+                      key={card.title}
+                      onClick={() => {
+                        if (mode !== "chat-projects") handleModeChange("chat-projects");
+                        orchestrator.send(card.body);
+                      }}
+                      disabled={orchestrator.isStreaming}
+                      className={`text-left p-4 rounded-2xl border bg-gradient-to-br ${card.accent} hover:border-cyan-400/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      <p className="text-[13px] font-semibold text-white mb-1">{card.title}</p>
+                      <p className="text-[12px] text-slate-300 leading-relaxed">{card.body}</p>
+                    </button>
+                  ))}
+                </div>
+
+                <p className="mt-5 text-[11px] text-slate-500 leading-relaxed">
+                  Klik op een prompt om hem direct te sturen. Tools links zijn beschikbaar voor de orchestrator;
+                  Eva schakelt automatisch tussen calculators, chatbots en visualisaties.
+                </p>
               </div>
+            </section>
+          ) : null}
+
+          <section className={`flex-1 flex flex-col min-w-0 ${isBrainstorm ? "bg-slate-950/60" : "bg-slate-950/50"}`}>
+            {isDocs ? (
+              <DocumentsPanel />
             ) : isBrainstorm ? (
-              <ChatStream
-                messages={orchestrator.messages}
-                isStreaming={orchestrator.isStreaming}
-                error={orchestrator.error}
-                onSend={orchestrator.send}
-                onStop={orchestrator.stop}
-                placeholder="Verder brainstormen…"
-                emptyHint="Brainstorm sessie"
-              />
+              <div className="flex flex-col h-full min-h-0">
+                <div className="px-4 py-3 border-b border-slate-800 flex items-center gap-2 shrink-0">
+                  <Bot className="w-4 h-4 text-cyan-400" />
+                  <h3 className="text-[13px] font-semibold text-white">Chat</h3>
+                  {orchestrator.toolInvocations.length > 0 && (
+                    <span className="text-[10px] text-slate-500 font-mono ml-auto">
+                      {orchestrator.toolInvocations.length} tool call{orchestrator.toolInvocations.length === 1 ? "" : "s"}
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1 min-h-0">
+                  <ChatStream
+                    messages={orchestrator.messages}
+                    isStreaming={orchestrator.isStreaming}
+                    error={orchestrator.error}
+                    onSend={(text) => {
+                      if (mode !== "chat-projects") handleModeChange("chat-projects");
+                      orchestrator.send(text);
+                    }}
+                    onStop={orchestrator.stop}
+                    placeholder={orchestrator.messages.length ? "Verder brainstormen…" : "Start een brainstorm…"}
+                    emptyHint="Klaar om te brainstormen"
+                    emptySubtext="Klik links op een startprompt of typ je eigen vraag — Eva combineert je tools."
+                  />
+                </div>
+              </div>
             ) : !sessionId ? (
               <div className="flex-1 flex items-center justify-center">
                 {createSession.error ? (
@@ -266,8 +256,8 @@ export function Workspace() {
             )}
           </section>
 
-          {/* Right: Context viewer (hidden on docs) */}
-          {!isDocs && (
+          {/* Right: Context viewer (hidden on docs and brainstorm — brainstorm shows the chat here instead) */}
+          {!isDocs && !isBrainstorm && (
             <aside className="w-80 border-l border-slate-800 shrink-0">
               <ContextViewer
                 sessionId={sessionId}
