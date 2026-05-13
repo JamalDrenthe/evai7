@@ -631,12 +631,10 @@ See the per-phase summaries for granular history:
 
 Before shipping to anything resembling production, walk this list:
 
-- [ ] **Rotate `APP_SECRET`** — must be a long random string. The dev fallback (`evai-demo-secret-key-not-for-production`) is inert but identifiable.
+- [ ] **`APP_SECRET` is a long random string** — generate with `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`. Without it, anyone can forge session cookies.
 - [ ] **Disable demo login** in `api/auth-router.ts` (or gate it behind `NODE_ENV !== "production"`).
 - [ ] **Set `OWNER_UNION_ID`** so exactly one user receives `role=admin` on first sign-in.
 - [ ] **Lock down Supabase RLS** — `db/migrations/0001_*.sql` currently grants `anon` + `authenticated` full access for demo purposes. Replace those policies with per-user row filters before go-live.
-- [ ] **Rotate LLM API keys** if they were ever shared outside the team. `.env` is gitignored but keys can leak via screenshots, logs, and backups.
-- [ ] **Rotate `GITHUB_TOKEN`** down to the minimum required scopes (usually `repo` + `read:user`).
 - [ ] **Tighten CORS / cookies** — the cookie is httpOnly + samesite, but confirm `secure=true` behind your production reverse proxy.
 - [ ] **Enable `REDIS_URL`** for session persistence if you run more than one backend instance (the in-process LRU is per-node).
 - [ ] **Rate limits** — `POST /api/orchestrator/stream` is capped at 120 req/min per user (`api/middleware/rate-limit.ts`). Tune per your SLA.
