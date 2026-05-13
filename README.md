@@ -537,6 +537,26 @@ If you skip this, the app still runs — Documents and Organogram fall back to l
 
 The orchestrator (`api/orchestrator/llm-client.ts`) speaks the OpenAI Chat Completions protocol, so any compatible endpoint works. Tested setups:
 
+### Moonshot Kimi (OpenAI-compatible endpoint)
+
+```dotenv
+LLM_PROVIDER=openai
+LLM_API_KEY=sk-...
+LLM_MODEL=kimi-k2.6
+LLM_BASE_URL=https://api.moonshot.ai/v1
+```
+
+Model options (see [platform.kimi.ai/docs/models](https://platform.kimi.ai/docs/models)):
+
+| Model | Notes |
+|---|---|
+| `kimi-k2.6` | Multimodal, 256K context, reasoning support — current flagship. |
+| `kimi-k2-turbo-preview` | High-speed K2 (60–100 tok/s), 256K context. |
+| `kimi-k2-thinking` | Deep-reasoning variant, multi-step tool calling. |
+| `moonshot-v1-8k` / `32k` / `128k` | Legacy generation-only models. |
+
+Account needs a paid balance on <https://platform.moonshot.ai/console> or requests return HTTP 429 with `exceeded_current_quota_error`.
+
 ### Google Gemini (OpenAI-compatible endpoint)
 
 ```dotenv
