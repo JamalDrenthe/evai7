@@ -231,26 +231,24 @@ Every module is a self-contained folder that ships:
 
 Both registries (`api/modules/_registry.ts` and `src/modules/_registry.ts`) eagerly import every module at boot; [adding a new one](#adding-a-new-module) takes ~3 files and two import lines.
 
-### Current modules (14 registered)
+### Current modules (12 registered, all functional)
 
 | # | Module | Type | Status |
 |---|---|---|---|
-| 1 | ZZP Netto Calculator | calculator | ✅ Functional (NL tax 2025) |
-| 2 | VVC Calculator | calculator | ✅ Functional (sliders + chart) |
-| 3 | Mining Calculator | calculator | ⏸️ Placeholder |
-| 4 | Estate Calculator | calculator | ⏸️ Placeholder |
-| 5 | TGC Chatbot | chatbot | ✅ Functional (multilingual) |
-| 6 | Hellings Delivery Chatbot | chatbot | ⏸️ Placeholder |
-| 7 | Loep Services Chatbot | chatbot | ⏸️ Placeholder |
-| 8 | VVC Chatbot | chatbot | ⏸️ Placeholder |
-| 9 | Ecosysteem Chatbot | chatbot | ⏸️ Placeholder (meta) |
-| 10 | Organogram | visualization | ✅ Functional (query + CRUD) |
-| 11 | Takenblok | tool | ⏸️ Placeholder |
-| 12 | Visualization | visualization | ⏸️ Placeholder |
-| 13 | Verification | verification | ⏸️ Placeholder |
-| 14 | Voice Verification | verification | ⏸️ Placeholder (TS stub → Python sidecar) |
+| 1 | ZZP Netto Calculator | calculator | ✅ NL tax 2025 (zelfstandigenaftrek, MKB, ZVW) |
+| 2 | VVC Calculator | calculator | ✅ Sliders + project earnings chart |
+| 3 | Mining Calculator | calculator | ✅ Streaming revenue (Spotify/Apple/YouTube + Apple-Mini farm) |
+| 4 | Estate Calculator | calculator | ✅ Vastgoed-vliegwiel simulatie met cashflow steps |
+| 5 | TGC Chatbot | chatbot | ✅ Multilingual cashflow expert |
+| 6 | VVC Chatbot | chatbot | ✅ Knowledge base lookup (verdienmodel, cultuur, Double Team) |
+| 7 | Ecosysteem Chatbot | chatbot | ✅ Meta-router naar de juiste module per onderwerp |
+| 8 | Organogram | visualization | ✅ Query + CRUD over bedrijfsstructuur |
+| 9 | Takenblok | tool | ✅ Kanban (4 kolommen) gevoed door work-router |
+| 10 | Visualization | visualization | ✅ Line/bar/area chart builder (Recharts) |
+| 11 | Verification | verification | ✅ KYC-style heuristieken (document, leeftijd, naam, land) |
+| 12 | Voice Verification | verification | ✅ Live waveform + mock confidence (Python sidecar via `PYTHON_BRIDGE_URL`) |
 
-Placeholders are wired into the registry, return descriptive "source code pending" responses, and have a Panel UI explaining what's expected. Replacing them with real logic requires **zero core changes**.
+Every module ships a typed Zod schema, a backend skill that emits progress events and persists context variables, plus a frontend Panel for direct-tool interaction. Voice Verification falls back to a deterministic mock when no Python sidecar is configured.
 
 ---
 
@@ -640,10 +638,10 @@ See the per-phase summaries for granular history:
 
 ### What's still pending
 
-- Source code for 10 placeholder modules (Mining, Estate, Takenblok, Hellings, Loep, VVC Chatbot, Ecosysteem, Visualization, Verification, Voice Verification).
-- Python sidecar implementation for Voice Verification.
+- Python sidecar implementation for real `voice-verification` (currently a deterministic mock fallback).
 - pgvector indexing for semantic history search (optional, low priority).
 - Replacing the demo login with the real Kimi OAuth flow (when `KIMI_AUTH_URL` becomes available).
+- Full i18n string catalogue (`/account/system` already toggles `html[lang]` but UI strings stay Dutch).
 
 ---
 
