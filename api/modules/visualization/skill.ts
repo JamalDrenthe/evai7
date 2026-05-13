@@ -1,13 +1,17 @@
+import { nanoid } from "nanoid";
 import type { Skill, SkillResult } from "../../../contracts/skill";
-import type { InvocationContext } from "../../../contracts/skill";
-import type { VisualizationInput, VisualizationOutput } from "./schema";
+import type { ContextEntry } from "../../../contracts/session-context";
+import { VisualizationInputSchema, type VisualizationInput, type VisualizationOutput } from "./schema";
 
-// Placeholder skill - to be filled in when source code is provided
-export function generateVisualization(_input: VisualizationInput): VisualizationOutput {
-  // Suppress unused warning - placeholder implementation
-  void _input;
+export function normalizeChart(input: VisualizationInput): VisualizationOutput {
   return {
-    placeholder: "Visualization logic not yet implemented - source code pending from user",
+    kind: input.kind,
+    title: input.title,
+    data: input.data,
+    xKey: input.xKey,
+    yKeys: input.yKeys,
+    pointCount: input.data.length,
+    seriesCount: input.yKeys.length,
   };
 }
 
@@ -17,24 +21,41 @@ export const skill: Skill<VisualizationInput, VisualizationOutput> = {
     name: "Visualization",
     type: "visualization",
     version: "1.0.0",
-    description: "Visualization tool - source code pending from user",
-    tags: ["visualization", "charts", "graphs"],
+    description:
+      "Bouw line/bar/area charts uit gestructureerde data. Output wordt door het Visualization-paneel gerenderd met Recharts.",
+    tags: ["visualization", "chart", "graph", "recharts"],
     capabilities: [
       {
         name: "generate",
-        description: "Generate visualization - implementation pending",
+        description:
+          "Genereer een chart-spec. Specificeer kind (line/bar/area), titel, datapunten als records, en welke velden de x-as en numerieke series zijn.",
         inputSchema: {
           type: "object",
-          properties: {},
+          required: ["data", "xKey", "yKeys"],
+          properties: {
+            kind: { type: "string", enum: ["line", "bar", "area"] },
+            title: { type: "string" },
+            data: {
+              type: "array",
+              items: { type: "object" },
+              description: "Rijen met datapunten",
+            },
+            xKey: { type: "string" },
+            yKeys: { type: "array", items: { type: "string" } },
+          },
         },
         outputSchema: {
           type: "object",
-          properties: {},
+          properties: {
+            kind: { type: "string" },
+            data: { type: "array" },
+            pointCount: { type: "number" },
+          },
         },
       },
     ],
     contextRequirements: [],
-    contextOutputs: [],
+    contextOutputs: ["lastChart"],
     dependencies: [],
     ui: {
       panel: "@/modules/visualization/Panel",
@@ -45,28 +66,57 @@ export const skill: Skill<VisualizationInput, VisualizationOutput> = {
     runtime: "typescript",
   },
   capabilities: {
-    generate: async (input: VisualizationInput, ctx: InvocationContext): Promise<SkillResult<VisualizationOutput>> => {
-      // Suppress unused warning - placeholder implementation
-      void ctx;
-      try {
-        const output = generateVisualization(input);
-        return {
-          ok: true,
-          data: output,
-          contextDelta: {},
-          trace: [{ step: "generate", ts: Date.now() }],
-        };
-      } catch (err) {
+    generate: async (rawInput, ctx): Promise<SkillResult<VisualizationOutput>> => {
+      const ts = Date.now();
+      const parsed = VisualizationInputSchema.safeParse(rawInput);
+      if (!parsed.success) {
         return {
           ok: false,
-          error: {
-            code: "GENERATION_ERROR",
-            message: err instanceof Error ? err.message : String(err),
-          },
-          contextDelta: {},
-          trace: [{ step: "error", ts: Date.now() }],
+          error: { code: "INVALID_INPUT", message: parsed.error.message },
+          trace: [{ step: "validate", ts }],
         };
       }
+      const output = normalizeChart(parsed.data);
+      const endTs = Date.now();
+      ctx.emit({
+        type: "skill.end",
+        moduleId: "visualization",
+        capability: "generate",
+        ts: endTs,
+        durationMs: endTs - ts,
+      });
+
+      const entry: ContextEntry = {
+        id: nanoid(),
+        ts: endTs,
+        source: "skill",
+        moduleId: "visualization",
+        capability: "generate",
+        kind: "output",
+        payload: { input: parsed.data, output },
+        refs: [],
+        summary: `${output.kind} chart "${output.title}" · ${output.pointCount} punten × ${output.seriesCount} series`,
+      };
+
+      return {
+        ok: true,
+        data: output,
+        contextDelta: {
+          history: [entry],
+          variables: {
+            lastChart: {
+              name: "lastChart",
+              value: output,
+              sourceEntryId: entry.id,
+              ts: endTs,
+            },
+          },
+        },
+        trace: [
+          { step: "validate", ts },
+          { step: "normalize", ts: endTs },
+        ],
+      };
     },
   },
 };

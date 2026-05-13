@@ -1,14 +1,15 @@
 import { z } from "zod";
 
-// Placeholder schema - to be filled in when source code is provided
 export const VvcChatbotInputSchema = z.object({
-  placeholder: z.string().optional(),
+  query: z.string().min(1).describe("De vraag van de gebruiker over VVC."),
 });
 
 export type VvcChatbotInput = z.infer<typeof VvcChatbotInputSchema>;
 
 export const VvcChatbotOutputSchema = z.object({
-  placeholder: z.string(),
+  topic: z.string(),
+  response: z.string(),
+  matched: z.boolean(),
 });
 
 export type VvcChatbotOutput = z.infer<typeof VvcChatbotOutputSchema>;
