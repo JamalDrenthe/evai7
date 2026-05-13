@@ -115,14 +115,81 @@ export function Workspace() {
           <section className="flex-1 flex flex-col min-w-0 bg-slate-950/50">
             {isDocs ? (
               <DocumentsPanel />
-            ) : isBrainstorm ? (
-              <div className="flex-1 flex items-center justify-center p-6">
-                <div className="text-center">
-                  <Lightbulb size={48} className="mx-auto text-cyan-400 mb-4" />
-                  <h2 className="text-xl font-semibold text-white mb-2">Brainstorm</h2>
-                  <p className="text-sm text-slate-400">Brainstorm module is nog niet geïmplementeerd.</p>
+            ) : isBrainstorm && !orchestrator.messages.length ? (
+              <div className="flex-1 overflow-y-auto p-8">
+                <div className="max-w-3xl mx-auto">
+                  <div className="text-center mb-8">
+                    <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-indigo-600/20 border border-cyan-500/30 flex items-center justify-center">
+                      <Lightbulb size={26} className="text-cyan-400" />
+                    </div>
+                    <h2 className="text-2xl font-semibold text-white mb-2">Brainstorm</h2>
+                    <p className="text-sm text-slate-400 max-w-md mx-auto">
+                      Begeleide ideatie met je modules. Kies een startprompt of typ je eigen vraag — Eva combineert
+                      tools, context en eerdere sessies om je verder te helpen.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                    {[
+                      {
+                        title: "Genereer 5 productideeën",
+                        body: "Brainstorm vijf nieuwe productideeën voor de Verdienende Vrienden Club, gebaseerd op huidige cashflow.",
+                        accent: "from-cyan-500/15 to-cyan-500/5 border-cyan-500/30",
+                      },
+                      {
+                        title: "Plan een marketingcampagne",
+                        body: "Bedenk een campagne van 4 weken om nieuwe ZZP'ers naar het platform te trekken. Inclusief kanalen + KPI's.",
+                        accent: "from-indigo-500/15 to-indigo-500/5 border-indigo-500/30",
+                      },
+                      {
+                        title: "Mindmap rond een thema",
+                        body: "Maak een mindmap van 3 niveaus diep over \u201cVoice Verificatie als anti-fraude tool\u201d.",
+                        accent: "from-emerald-500/15 to-emerald-500/5 border-emerald-500/30",
+                      },
+                      {
+                        title: "Combineer twee modules",
+                        body: "Hoe kan de ZZP Netto Calculator samenwerken met de Estate Calculator om vermogensgroei te modelleren?",
+                        accent: "from-amber-500/15 to-amber-500/5 border-amber-500/30",
+                      },
+                    ].map((card) => (
+                      <button
+                        key={card.title}
+                        onClick={() => {
+                          if (mode !== "chat-projects") handleModeChange("chat-projects");
+                          orchestrator.send(card.body);
+                        }}
+                        className={`text-left p-4 rounded-2xl border bg-gradient-to-br ${card.accent} hover:border-cyan-400/60 transition-colors`}
+                      >
+                        <p className="text-[13px] font-semibold text-white mb-1">{card.title}</p>
+                        <p className="text-[12px] text-slate-300 leading-relaxed">{card.body}</p>
+                      </button>
+                    ))}
+                  </div>
+
+                  <ChatStream
+                    messages={orchestrator.messages}
+                    isStreaming={orchestrator.isStreaming}
+                    error={orchestrator.error}
+                    onSend={(msg) => {
+                      if (mode !== "chat-projects") handleModeChange("chat-projects");
+                      orchestrator.send(msg);
+                    }}
+                    onStop={orchestrator.stop}
+                    placeholder="Start een brainstorm…"
+                    emptyHint="Typ je idee of kies een startprompt hierboven"
+                  />
                 </div>
               </div>
+            ) : isBrainstorm ? (
+              <ChatStream
+                messages={orchestrator.messages}
+                isStreaming={orchestrator.isStreaming}
+                error={orchestrator.error}
+                onSend={orchestrator.send}
+                onStop={orchestrator.stop}
+                placeholder="Verder brainstormen…"
+                emptyHint="Brainstorm sessie"
+              />
             ) : !sessionId ? (
               <div className="flex-1 flex items-center justify-center">
                 {createSession.error ? (

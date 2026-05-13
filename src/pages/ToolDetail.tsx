@@ -853,12 +853,42 @@ export function ToolDetail() {
       );
     }
 
+    if (slug === "voice-verificatie") {
+      return (
+        <AppLayout>
+          <div className="flex items-center gap-4 mb-6">
+            <Link
+              to="/tools"
+              className="w-9 h-9 rounded-xl bg-white border border-[var(--eva-border-subtle)] flex items-center justify-center text-[var(--eva-text-muted)] hover:text-[var(--eva-text-primary)] transition-colors"
+            >
+              <ArrowLeft size={18} />
+            </Link>
+            <nav className="text-[12px] text-[var(--eva-text-muted)]">
+              <Link to="/tools" className="text-[var(--eva-text-secondary)] hover:underline">Gereedschap</Link>
+              <span className="mx-2">/</span>
+              <span>Voice verificatie</span>
+            </nav>
+          </div>
+          <VoiceVerificatie />
+        </AppLayout>
+      );
+    }
+
     return (
       <AppLayout>
-        <div className="text-center py-16">
-          <p className="text-lg text-[var(--eva-text-muted)]">Tool niet gevonden</p>
-          <Link to="/tools" className="text-[var(--eva-accent)] hover:underline text-sm mt-2 inline-block">
-            Terug naar tools
+        <div className="max-w-md mx-auto text-center py-16">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--eva-canvas)] flex items-center justify-center">
+            <Sparkles size={28} className="text-[var(--eva-text-muted)]" />
+          </div>
+          <h2 className="text-lg font-semibold text-[var(--eva-text-primary)] mb-1">Tool niet gevonden</h2>
+          <p className="text-sm text-[var(--eva-text-muted)] mb-4">
+            Geen tool gekoppeld aan <code className="px-1.5 py-0.5 rounded bg-[var(--eva-canvas)] text-[12px]">{slug}</code>
+          </p>
+          <Link
+            to="/tools"
+            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--eva-accent)] hover:underline"
+          >
+            <ArrowLeft size={14} /> Terug naar tools
           </Link>
         </div>
       </AppLayout>
