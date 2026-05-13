@@ -1,6 +1,6 @@
 import { useState, useEffect, Suspense, useCallback } from "react";
 import { useLocation } from "react-router";
-import { Sparkles, Loader2, FileText, Lightbulb } from "lucide-react";
+import { Sparkles, Loader2, FileText, Lightbulb, Send } from "lucide-react";
 import { trpc } from "@/providers/trpc";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { ChatStream } from "@/components/orchestrator/ChatStream";
@@ -17,9 +17,11 @@ export function Workspace() {
   const currentPath = location.pathname;
   const isDocs = currentPath === "/workspace/docs";
   const isBrainstorm = currentPath === "/workspace/brainstorm";
-  const [mode, setMode] = useState<InteractionMode>("chat-calculators");
+  const initialMode: InteractionMode = isBrainstorm ? "chat-projects" : "chat-calculators";
+  const [mode, setMode] = useState<InteractionMode>(initialMode);
   const [activeModuleId, setActiveModuleId] = useState<string | undefined>();
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [brainstormInput, setBrainstormInput] = useState("");
 
   const createSession = trpc.sessions.create.useMutation();
   const setSessionMode = trpc.sessions.setMode.useMutation();
@@ -31,7 +33,7 @@ export function Workspace() {
   useEffect(() => {
     if (!sessionId && !createSession.isPending && !createSession.error) {
       createSession.mutate(
-        { mode: "chat-calculators" },
+        { mode: initialMode },
         {
           onSuccess: (s) => setSessionId(s.sessionId),
           onError: (err) => {
@@ -158,6 +160,7 @@ export function Workspace() {
                           if (mode !== "chat-projects") handleModeChange("chat-projects");
                           orchestrator.send(card.body);
                         }}
+                        disabled={orchestrator.isStreaming}
                         className={`text-left p-4 rounded-2xl border bg-gradient-to-br ${card.accent} hover:border-cyan-400/60 transition-colors`}
                       >
                         <p className="text-[13px] font-semibold text-white mb-1">{card.title}</p>
@@ -166,18 +169,42 @@ export function Workspace() {
                     ))}
                   </div>
 
-                  <ChatStream
-                    messages={orchestrator.messages}
-                    isStreaming={orchestrator.isStreaming}
-                    error={orchestrator.error}
-                    onSend={(msg) => {
-                      if (mode !== "chat-projects") handleModeChange("chat-projects");
-                      orchestrator.send(msg);
-                    }}
-                    onStop={orchestrator.stop}
-                    placeholder="Start een brainstorm…"
-                    emptyHint="Typ je idee of kies een startprompt hierboven"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={brainstormInput}
+                      onChange={(e) => setBrainstormInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          const text = brainstormInput.trim();
+                          if (!text || orchestrator.isStreaming) return;
+                          setBrainstormInput("");
+                          if (mode !== "chat-projects") handleModeChange("chat-projects");
+                          orchestrator.send(text);
+                        }
+                      }}
+                      placeholder="Start een brainstorm…"
+                      disabled={orchestrator.isStreaming}
+                      className="flex-1 px-4 py-2.5 bg-slate-900/60 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition disabled:opacity-50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const text = brainstormInput.trim();
+                        if (!text || orchestrator.isStreaming) return;
+                        setBrainstormInput("");
+                        if (mode !== "chat-projects") handleModeChange("chat-projects");
+                        orchestrator.send(text);
+                      }}
+                      disabled={!brainstormInput.trim() || orchestrator.isStreaming}
+                      className="px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <p className="mt-3 text-[11px] text-slate-500 text-center">
+                    Tip: kies een startprompt hierboven of typ je eigen vraag. Eva schakelt automatisch naar de juiste tools.
+                  </p>
                 </div>
               </div>
             ) : isBrainstorm ? (
